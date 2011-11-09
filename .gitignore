@@ -12,3 +12,9 @@ build
 ldap.node
 .project
 .settings
+
+tests/cn=config.ldif
+tests/cn=config/
+tests/openldap-data/
+tests/slapd.args
+tests/slapd.pid
