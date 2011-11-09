@@ -3,7 +3,6 @@
 
 #include <v8.h>
 #include <node.h>
-#include <node_events.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -63,7 +62,7 @@ struct timeval ldap_tv = { 0, 0 }; // static struct used to make ldap_result non
 
 #define NODE_METHOD(n) static Handle<Value> n(const Arguments& args)
 
-class LDAPConnection : public EventEmitter
+class LDAPConnection: ObjectWrap
 {
 private:
   LDAP  *ld;
@@ -77,8 +76,6 @@ public:
   {
     HandleScope scope;
     Local<FunctionTemplate> ft = FunctionTemplate::New(New);
-
-    ft->Inherit(EventEmitter::constructor_template);
 
     s_ct = Persistent<FunctionTemplate>::New(ft);
     s_ct->InstanceTemplate()->SetInternalFieldCount(1);
@@ -159,7 +156,7 @@ public:
 
     ev_io_stop(EV_DEFAULT_ &(c->read_watcher_));
 
-    c->Emit(symbol_disconnected, 0, NULL);
+    //c->Emit(symbol_disconnected, 0, NULL);
 
     RETURN_INT(0);
   }
@@ -184,7 +181,7 @@ public:
     ARG_STR(attrs_str,    3);
 
     if (c->ld == NULL) {
-      c->Emit(symbol_disconnected, 0, NULL);
+      //c->Emit(symbol_disconnected, 0, NULL);
       RETURN_INT(LDAP_SERVER_DOWN);
     }
 
@@ -229,7 +226,7 @@ public:
     ARG_INT(opt_deref,  4);
     
     if (c->ld == NULL) {
-      c->Emit(symbol_disconnected, 0, NULL);
+      //c->Emit(symbol_disconnected, 0, NULL);
       RETURN_INT(LDAP_SERVER_DOWN);
     }
     
@@ -271,7 +268,7 @@ public:
     ARG_ARRAY(modsHandle, 1);
 
     if (c->ld == NULL) {
-      c->Emit(symbol_disconnected, 0, NULL);
+      //c->Emit(symbol_disconnected, 0, NULL);
       RETURN_INT(-1);
     }
 
@@ -325,7 +322,7 @@ public:
     msgid = ldap_modify(c->ld, *dn, ldapmods);
 
     if (msgid == LDAP_SERVER_DOWN) {
-      c->Emit(symbol_disconnected, 0, NULL);
+      //c->Emit(symbol_disconnected, 0, NULL);
       RETURN_INT(-1);
     }
 
@@ -393,7 +390,7 @@ public:
     ev_io_start(EV_DEFAULT_ &(c->read_watcher_));
 
     if (msgid == LDAP_SERVER_DOWN) {
-      c->Emit(symbol_disconnected, 0, NULL);
+      //c->Emit(symbol_disconnected, 0, NULL);
     }
 
     ldap_mods_free(ldapmods, 1);
@@ -423,7 +420,7 @@ public:
     }
 
     if ((msgid = ldap_delete(c->ld, dn)) == LDAP_SERVER_DOWN) {
-      c->Emit(symbol_disconnected, 0, NULL);
+      //c->Emit(symbol_disconnected, 0, NULL);
     } else {
       ldap_get_option(c->ld, LDAP_OPT_DESC, &fd);    
       ev_io_set(&(c->read_watcher_), fd, EV_READ);
@@ -454,12 +451,12 @@ public:
     //    ARG_BOOL(deleteoldrdn, 3);
 
     if (c->ld == NULL) {
-      c->Emit(symbol_disconnected, 0, NULL);
+      //c->Emit(symbol_disconnected, 0, NULL);
       RETURN_INT(LDAP_SERVER_DOWN);
     }
 
     if ((msgid = ldap_modrdn(c->ld, *dn, *newrdn) == LDAP_SERVER_DOWN)) {
-      c->Emit(symbol_disconnected, 0, NULL);
+      //c->Emit(symbol_disconnected, 0, NULL);
       RETURN_INT(LDAP_SERVER_DOWN);
     }
 
@@ -497,7 +494,7 @@ public:
     }
     
     if ((msgid = ldap_simple_bind(c->ld, binddn, password)) == LDAP_SERVER_DOWN) {
-      c->Emit(symbol_disconnected, 0, NULL);
+      //c->Emit(symbol_disconnected, 0, NULL);
     } else {
       ldap_get_option(c->ld, LDAP_OPT_DESC, &fd);    
       ev_io_set(&(c->read_watcher_), fd, EV_READ);
@@ -577,7 +574,7 @@ public:
     }
 
     if ((res = ldap_result(c->ld, LDAP_RES_ANY, 1, &ldap_tv, &ldap_res)) < 1) {
-      c->Emit(symbol_disconnected, 0, NULL);
+      //c->Emit(symbol_disconnected, 0, NULL);
       return;
     }
 
@@ -590,7 +587,7 @@ public:
     if (error) {
       args[1] = Integer::New(error);
       args[2] = Local<Value>::New(String::New(ldap_err2string(error)));
-      c->Emit(symbol_error, 3, args);
+      //c->Emit(symbol_error, 3, args);
     } else {
       switch(res) {
       case LDAP_RES_BIND:
@@ -598,16 +595,16 @@ public:
       case LDAP_RES_MODDN:
       case LDAP_RES_ADD:
       case LDAP_RES_DELETE:
-        c->Emit(symbol_result, 2, args);
+        //c->Emit(symbol_result, 2, args);
         break;
 
       case  LDAP_RES_SEARCH_RESULT:
         args[2] = c->parseReply(c, ldap_res);
-        c->Emit(symbol_search, 3, args);
+        //c->Emit(symbol_search, 3, args);
         break;
 
       default:
-        c->Emit(symbol_unknown, 1, args);
+        //c->Emit(symbol_unknown, 1, args);
         break;
       }
     }
@@ -619,7 +616,8 @@ public:
 
 Persistent<FunctionTemplate> LDAPConnection::s_ct;
 
-extern "C" void
-init(Handle<Object> target) {
+extern "C" void init(Handle<Object> target) {
   LDAPConnection::Init(target);
 }
+
+NODE_MODULE(LDAP, init);

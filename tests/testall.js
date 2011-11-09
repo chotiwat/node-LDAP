@@ -8,7 +8,6 @@ var ldapConfig = {
   attr: 'cn',
   binddn: 'cn=manager,dc=sample,dc=com',
   password: 'secret',
-  // configPassword: 'secret',
   maxConnectRetries: 3,
   retryWait: 100
 };
