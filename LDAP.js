@@ -89,6 +89,10 @@ var Connection = function() {
         binding.addListener(event, CB);
     };
 
+    self.removeListener = function(event, CB) {
+        binding.removeListener(event, CB);
+    };
+
     self.close = function() {
         binding.close();
     }

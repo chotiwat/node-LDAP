@@ -788,8 +788,11 @@ public:
       return;
     }
 
-    if ((res = ldap_result(c->ld, LDAP_RES_ANY, 1, &ldap_tv, &ldap_res)) < 1) {
-      c->Emit(symbol_disconnected, 0, NULL);
+    res = ldap_result(c->ld, LDAP_RES_ANY, 1, &ldap_tv, &ldap_res);
+    if (res < 1) {
+      if (res < 0) {
+        c->Emit(symbol_disconnected, 0, NULL);
+      }
       return;
     }
 
